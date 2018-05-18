@@ -137,6 +137,6 @@ echo $bird->id_as(Bird::class);
 Or use the `entity_id` property to get the entities common ID:
 
 ```php
-// The entity's Animal ID
+// The entity's common ID
 echo $bird->entity_id
 ```
