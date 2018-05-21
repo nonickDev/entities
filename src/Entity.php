@@ -189,14 +189,10 @@ class Entity extends Model
     public static function GetWithEntityID($entity_id, $entity_class = null, $elevate = true)
     {
         if($entity_class === null)
-        {
             $entity_class = Entity::class;
-        }
 
         if($entity_class != Entity::class)
-        {
             $entity = $entity_class::where("entity_id", $entity_id)->first();
-        }
         else $entity = $entity_class::where("id", $entity_id)->first();
 
         return $entity;
@@ -394,9 +390,7 @@ class Entity extends Model
     {
         $cache_key = "Entity__hasAttribute__" . static::class . "__" . $key;
         if(Cache::has($cache_key))
-        {
             return Cache::get($cache_key);
-        }
         else
         {
             $has_attribute = Schema::hasColumn($this->getTable(), $key);
