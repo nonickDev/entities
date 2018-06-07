@@ -192,7 +192,13 @@ class Entity extends Model
             $entity_class = Entity::class;
 
         if($entity_class != Entity::class)
-            $entity = $entity_class::where("entity_id", $entity_id)->first();
+        {
+            try {
+                $entity = $entity_class::where("entity_id", $entity_id)->first();
+            } catch(Exception $e) {
+                var_dump($e->getTrace());
+            }
+        }
         else $entity = $entity_class::where("id", $entity_id)->first();
 
         return $entity;
