@@ -117,8 +117,6 @@ class Entity extends Model
         else return static::$name . " ID " . $this->id_as(static::class) . "";
     }
 
-    // TODO: what happens if entity has same named attribute at multiple levels? closest definition should be respected but what happens? getRecursiveFillable?
-
     public function id_as($entity_class_)
     {
         if($entity_class_ === null) throw new Exception("Entity::id_as() called without entity_class being specified (NULL)");
@@ -192,13 +190,7 @@ class Entity extends Model
             $entity_class = Entity::class;
 
         if($entity_class != Entity::class)
-        {
-            try {
-                $entity = $entity_class::where("entity_id", $entity_id)->first();
-            } catch(Exception $e) {
-                var_dump($e->getTrace());
-            }
-        }
+            $entity = $entity_class::where("entity_id", $entity_id)->first();
         else $entity = $entity_class::where("id", $entity_id)->first();
 
         return $entity;
