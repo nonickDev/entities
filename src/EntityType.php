@@ -1,5 +1,6 @@
 <?php namespace Cvsouth\Entities;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
 class EntityType extends Entity
@@ -58,5 +59,42 @@ class EntityType extends Entity
             $parents[] = EntityType::From($entity_class);
 
         return $parents;
+    }
+
+    public static function GetChildren($entity_type_, $recursive = false, $include_entity = false)
+    {
+        $cache_key = "EntityType_GetChildren_" . $entity_type_->id_as(EntityType::class);
+        if(Cache::has($cache_key))
+        {
+            $children_entity_types = Cache::get($cache_key);
+        }
+        else
+        {
+            $children_entity_types = [];
+            $entity_types = static::all();
+
+            $entity_class_ = $entity_type_->entity_class;
+
+            foreach($entity_types as $entity_type)
+            {
+                $entity_class = $entity_type->entity_class;
+                $entity_class_parent = get_parent_class($entity_class);
+
+                if($entity_class_parent == $entity_class_)
+                    $children_entity_types[] = $entity_type;
+            }
+
+            Cache::forever($cache_key, $children_entity_types);
+        }
+
+        if($recursive)
+            foreach($children_entity_types as $children_entity_type)
+                foreach(static::GetChildren($children_entity_type, true, false) as $recursive_child)
+                    $children_entity_types[] = $recursive_child;
+
+        if($include_entity)
+            $children_entity_types = array_merge([$entity_type_], $children_entity_types);
+
+        return collect($children_entity_types);
     }
 }

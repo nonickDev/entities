@@ -6,17 +6,17 @@ use Illuminate\Database\Migrations\Migration;
 
 class CreateEntitiesTable extends Migration
 {
-  public function up()
-  {
-    Schema::create('entities', function (Blueprint $table)
+    public function up()
     {
-      $table->increments('id');
-      $table->string('top_class', 300);
-    });
-  }
+        Schema::create('entities', function (Blueprint $table)
+        {
+            $table->increments('id');
+            $table->string('top_class', 300);
+        });
+    }
 
-  public function down()
-  {
-    Schema::drop('entities');
-  }
+    public function down()
+    {
+        Schema::drop('entities');
+    }
 }
