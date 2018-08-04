@@ -8,3 +8,11 @@ if(!function_exists("str_ends"))
         return $length === 0 || (substr($haystack, -$length) === $needle);
     }
 }
+
+if(!function_exists("instr"))
+{
+    function instr($needle, $haystack)
+    {
+        return strpos($haystack, $needle) !== false;
+    }
+}
