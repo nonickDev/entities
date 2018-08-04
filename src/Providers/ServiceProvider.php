@@ -14,6 +14,8 @@ class ServiceProvider extends BaseServiceProvider
 
     public function register()
     {
+        require __DIR__ .  '/../functions.php';
+        
         AliasLoader::getInstance()->alias('Entity', Entity::class);
         AliasLoader::getInstance()->alias('EntityType', EntityType::class);
     }
