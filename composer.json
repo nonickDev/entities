@@ -2,8 +2,8 @@
     "name": "cvsouth/entities",
     "description": "Joined-table inheritance for Laravel",
     "require": {
-        "illuminate/support": "5.6.*",
-        "illuminate/database": "5.6.*"
+        "illuminate/support": "5.7.*",
+        "illuminate/database": "5.7.*"
     },
     "license": "MIT",
     "authors": [
