@@ -171,7 +171,7 @@ class Entity extends Model
 
                 $this->parent_ = Entity::CreateNew($parent_class, $data);
             }
-            else if(is_array($given_attributes) && count($given_attributes) > 0) $this->fill($given_attributes);
+            else if(is_array($given_attributes) && count($given_attributes) > 0) $this->parent_->fill($given_attributes);
 
             return $this->parent_;
         };
