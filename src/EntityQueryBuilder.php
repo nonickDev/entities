@@ -40,10 +40,13 @@ class EntityQueryBuilder extends QueryBuilder
 
     public function prefixColumn($column, $join_if_necessary = false)
     {
-        if($column === "*" || str_ends($column, ".*")) return $column;
+        // ignore wildcards
+        if($column === "*" || (substr($column, -2) === ".*"))
+            return $column;
 
         // already prefixed?
-        if(instr(".", $column)) return $column;
+        if(strpos($column, ".") !== false)
+            return $column;
 
         $model = $this->model();
         $entity_model = new Entity;
@@ -60,13 +63,13 @@ class EntityQueryBuilder extends QueryBuilder
 
             // get target class/table
             $table = $model->tableForAttribute($column);
-
         }
 
         // prefix
         $column = $table . "." . $column;
 
-        if($table === $this->from) return $column;
+        if($table === $this->from)
+            return $column;
 
         // add to join if necessary
         if($join_if_necessary)
