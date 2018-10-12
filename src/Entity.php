@@ -32,29 +32,20 @@ class Entity extends Model
     {
         $connection = $this->getConnection();
 
-        return new EntityQueryBuilder(
-            $connection, $connection->getQueryGrammar(), $connection->getPostProcessor()
-        );
+        return new EntityQueryBuilder($connection, $connection->getQueryGrammar(), $connection->getPostProcessor());
     }
 
     public function __set($key, $value)
     {
         if($key == "entity_id")
         {
-            if(static::class == Entity::class) return $this->setAttribute("id", $value);
+            if(static::class == Entity::class)
+                return $this->setAttribute("id", $value);
             else return $this->setAttribute($key, $value);
         }
         else if($this->hasAttribute($key)) return $this->setAttribute($key, $value);
-        else switch($key)
-        {
-            default:
-                if(static::class == Entity::class) return $this->setAttribute($key, $value);
-                else
-                {
-                    $parent = $this->parent_model();
-                    return $parent->$key = $value;
-                }
-        }
+        else if(static::class == Entity::class) return $this->setAttribute($key, $value);
+        else return $this->parent_model()->$key = $value;
     }
 
     public function tableForAttribute($attr)
@@ -66,7 +57,9 @@ class Entity extends Model
     public function entityClassForAttribute($attr)
     {
         $entity = $this;
+
         if($attr === "id") return $this;
+
         while(!$entity->hasAttribute($attr) && get_class($entity) !== Entity::class)
             $entity = $entity->parent_model();
 
@@ -85,41 +78,28 @@ class Entity extends Model
         switch($attr_)
         {
             case "entity_id":
-                if(static::class === Entity::class) return $this->id;
+                if(static::class === Entity::class)
+                    return $this->id;
                 else return $this->getAttribute("entity_id");
                 break;
 
-            case "fillable": return $this->getRecursiveFillable(); break;
+            case "fillable":
+                return $this->getRecursiveFillable(); break;
 
             default:
-
                 $attr = $this->getAttribute($attr_);
-
-                if(static::class === Entity::class) return $attr;
+                if(static::class === Entity::class)
+                    return $attr;
                 else if($attr === null && !$this->hasAttribute($attr_))
-                {
-                    $parent = $this->parent_model();
-                    return $parent->$attr_;
-                }
+                    return $this->parent_model()->$attr_;
                 else return $attr;
         }
     }
 
-    public function __toString()
-    {
-        $fillable = $this->getRecursiveFillable();
-        if(in_array("name", $fillable)) return $this->name;
-        else if(in_array("title", $fillable)) return $this->title;
-        else if(in_array("label", $fillable)) return $this->label;
-        else if(in_array("term", $fillable)) return $this->term;
-        else if(in_array("headline", $fillable)) return $this->headine;
-        else if(in_array("caption", $fillable)) return $this->caption;
-        else return static::$name . " ID " . $this->id_as(static::class) . "";
-    }
-
     public function id_as($entity_class_)
     {
-        if($entity_class_ === null) throw new Exception("Entity::id_as() called without entity_class being specified (NULL)");
+        if($entity_class_ === null)
+            throw new Exception("Entity::id_as() called without entity_class being specified (NULL)");
 
         $entity = $this;
 
@@ -245,7 +225,8 @@ class Entity extends Model
     {
         $cache_key = "Entity__getRecursiveFillable__" . static::class;
 
-        if(Cache::has($cache_key)) return Cache::get($cache_key);
+        if(Cache::has($cache_key))
+            return Cache::get($cache_key);
         else
         {
             $recursive_fillable = $this->fillable;
@@ -261,6 +242,7 @@ class Entity extends Model
             }
 
             Cache::forever($cache_key, $recursive_fillable);
+
             return $recursive_fillable;
         }
     }
@@ -342,13 +324,15 @@ class Entity extends Model
 
     public function delete()
     {
-        if(is_null($this->getKeyName())) throw new Exception('No primary key defined on model.');
+        if(is_null($this->getKeyName()))
+            throw new Exception('No primary key defined on model.');
 
         if($this->exists)
         {
             $parent_model = $this->parent_model();
 
-            if($this->fireModelEvent('deleting') === false) return false;
+            if($this->fireModelEvent('deleting') === false)
+                return false;
 
             $this->touchOwners();
             $this->performDeleteOnModel();
@@ -367,7 +351,9 @@ class Entity extends Model
     public function table_name($field_name = null)
     {
         $cache_key = "Entity__table_name__" . static::class . "__" . $field_name;
-        if(Cache::has($cache_key)) return Cache::get($cache_key);
+
+        if(Cache::has($cache_key))
+            return Cache::get($cache_key);
         else
         {
             if($field_name !== null && !$this->hasAttribute($field_name))
@@ -380,6 +366,7 @@ class Entity extends Model
             else $table_name = with(new static)->getTable();
 
             Cache::forever($cache_key, $table_name);
+
             return $table_name;
         }
     }
@@ -387,61 +374,75 @@ class Entity extends Model
     public function hasAttribute($key)
     {
         $cache_key = "Entity__hasAttribute__" . static::class . "__" . $key;
+
         if(Cache::has($cache_key))
             return Cache::get($cache_key);
         else
         {
             $has_attribute = Schema::hasColumn($this->getTable(), $key);
             Cache::forever($cache_key, $has_attribute);
+
             return $has_attribute;
         }
     }
 
-    public function setCreatedAt($value = null)
-    {
-        $this->setAttribute(static::CREATED_AT, $value);
-        return $this;
-    }
+//    public function __toString()
+//    {
+//        $fillable = $this->getRecursiveFillable();
+//        if(in_array("name", $fillable)) return $this->name;
+//        else if(in_array("title", $fillable)) return $this->title;
+//        else if(in_array("label", $fillable)) return $this->label;
+//        else if(in_array("term", $fillable)) return $this->term;
+//        else if(in_array("headline", $fillable)) return $this->headine;
+//        else if(in_array("caption", $fillable)) return $this->caption;
+//        else return static::$name . " ID " . $this->id_as(static::class) . "";
+//    }
 
-    public function setUpdatedAt($value = null)
-    {
-        $this->setAttribute(static::UPDATED_AT, $value);
-        return $this;
-    }
+//    public function setCreatedAt($value = null)
+//    {
+//        $this->setAttribute(static::CREATED_AT, $value);
+//        return $this;
+//    }
+//
+//    public function setUpdatedAt($value = null)
+//    {
+//        $this->setAttribute(static::UPDATED_AT, $value);
+//        return $this;
+//    }
 
-    public static function select_by_term($term = null)
-    {
-        return with(new static)->selectByTerm($term);
-    }
+//    public static function select_by_term($term = null)
+//    {
+//        return with(new static)->selectByTerm($term);
+//    }
 
-    public function selectByTerm($term = null)
-    {
-        $field = null;
-        $fillable = $this->getRecursiveFillable();
+//    public function selectByTerm($term = null)
+//    {
+//        $field = null;
+//        $fillable = $this->getRecursiveFillable();
+//
+//        if(in_array("name", $fillable)) $field = "name";
+//        else if(in_array("title", $fillable)) $field = "title";
+//        else if(in_array("label", $fillable)) $field = "label";
+//        else if(in_array("term", $fillable)) $field = "term";
+//        else if(in_array("headline", $fillable)) $field = "headline";
+//        else if(in_array("caption", $fillable)) $field = "caption";
+//
+//        if($field)
+//        {
+//            $entity_class = static::class;
+//            $entity_table = $entity_class::TableName();
+//
+//            $query = $entity_class
+//                ::select($entity_table . ".*")
+//                ->where($field, "LIKE", "%" . $term . "%");
+//
+//            return $query;
+//        }
+//
+//        throw new Exception("Method selectByTerm must be overwritten by sub class.");
+//    }
 
-        if(in_array("name", $fillable)) $field = "name";
-        else if(in_array("title", $fillable)) $field = "title";
-        else if(in_array("label", $fillable)) $field = "label";
-        else if(in_array("term", $fillable)) $field = "term";
-        else if(in_array("headline", $fillable)) $field = "headline";
-        else if(in_array("caption", $fillable)) $field = "caption";
-
-        if($field)
-        {
-            $entity_class = static::class;
-            $entity_table = $entity_class::TableName();
-
-            $query = $entity_class
-                ::select($entity_table . ".*")
-                ->where($field, "LIKE", "%" . $term . "%");
-
-            return $query;
-        }
-
-        throw new Exception("Method selectByTerm must be overwritten by sub class.");
-    }
-
-    public function showForProjectEntityTypeAssociation() { return true; }
-    public function initialise() { }
-    public function filterColumns($columns, $filter_for = null) { return $columns; }
+//    public function showForProjectEntityTypeAssociation() { return true; }
+//    public function initialise() { }
+//    public function filterColumns($columns, $filter_for = null) { return $columns; }
 }
