@@ -1,6 +1,6 @@
-# Joined-Table Inheritance for Eloquent
+# Entities - Joined-Table Inheritance for Eloquent
 
-This package allows you to store and query hierarchical models using Eloquent (joined-table inheritance).
+This package allows you to store and query hierarchical models using Eloquent.
 
 ## Installation
 
