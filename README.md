@@ -38,7 +38,7 @@ class Bird extends Animal
 }
 ```
 
-And when creating your migrations, include `entity_id`. Also insert a new EntityType object:
+When creating your migrations, include `entity_id` and insert a new `EntityType` object:
 
 ```php
 class CreateAnimalsTable extends Migration
