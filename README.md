@@ -1,6 +1,6 @@
-# Joined-Table Inheritance for Laravel
+# Joined-Table Inheritance for Eloquent
 
-This package provides joined-table inheritance to Laravel allowing you to store and query hierarchical objects in MySQL.
+This package allows you to store and query hierarchical models using Eloquent.
 
 ## Installation
 
