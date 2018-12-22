@@ -39,12 +39,12 @@ class Entity extends Model
     {
         if($key == 'entity_id')
         {
-            if(static::class === self::class)
+            if(static::class == Entity::class)
                 return $this->setAttribute('id', $value);
             else return $this->setAttribute($key, $value);
         }
         else if($this->hasAttribute($key)) return $this->setAttribute($key, $value);
-        else if(static::class === self::class) return $this->setAttribute($key, $value);
+        else if(static::class == Entity::class) return $this->setAttribute($key, $value);
         else return $this->parent_model()->$key = $value;
     }
 
@@ -60,10 +60,10 @@ class Entity extends Model
 
         if($attr === 'id') return $this;
 
-        while(!$entity->hasAttribute($attr) && \get_class($entity) !== self::class)
+        while(!$entity->hasAttribute($attr) && \get_class($entity) !== Entity::class)
             $entity = $entity->parent_model();
 
-        if(($entity_class = \get_class($entity)) === self::class)
+        if(($entity_class = \get_class($entity)) === Entity::class)
             return $this->hasAttribute($attr);
         else return $entity_class;
     }
@@ -78,7 +78,7 @@ class Entity extends Model
         switch($attr_)
         {
             case 'entity_id':
-                if(static::class === self::class)
+                if(static::class === Entity::class)
                     return $this->id;
                 else return $this->getAttribute('entity_id');
                 break;
@@ -88,7 +88,7 @@ class Entity extends Model
 
             default:
                 $attr = $this->getAttribute($attr_);
-                if(static::class === self::class)
+                if(static::class === Entity::class)
                     return $attr;
                 else if($attr === null && !$this->hasAttribute($attr_))
                     return $this->parent_model()->$attr_;
@@ -103,7 +103,7 @@ class Entity extends Model
 
         $entity = $this;
 
-        while(($entity_class = \get_class($entity)) !== $entity_class_ && $entity_class !== self::class)
+        while(($entity_class = \get_class($entity)) !== $entity_class_ && $entity_class !== Entity::class)
             $entity = $entity->parent_model();
 
         return $entity->id;
@@ -122,13 +122,13 @@ class Entity extends Model
             if($this->parent_ === null)
             {
                 $parent_class = get_parent_class($this);
-                if($parent_class === Model::class)
+                if($parent_class == Model::class)
                 {
                     $this->parent_ = false;
                     return false;
                 }
 
-                if($parent_class !== self::class)
+                if($parent_class != Entity::class)
                     $entity_id_column = 'entity_id';
                 else $entity_id_column = 'id';
 
@@ -167,9 +167,9 @@ class Entity extends Model
     public static function GetWithEntityID($entity_id, $entity_class = null, $elevate = true)
     {
         if($entity_class === null)
-            $entity_class = self::class;
+            $entity_class = Entity::class;
 
-        if($entity_class !== self::class)
+        if($entity_class != Entity::class)
             $entity = $entity_class::where('entity_id', $entity_id)->first();
         else $entity = $entity_class::where('id', $entity_id)->first();
 
@@ -202,7 +202,7 @@ class Entity extends Model
             $top_class = $entity->top_class;
 
             if($current_class !== $top_class)
-                $elevated_entities[] = static::GetWithEntityID($entity->entity_id, $top_class);
+                $elevated_entities[] = Entity::GetWithEntityID($entity->entity_id, $top_class);
             else $elevated_entities[] = $entity;
         }
 
@@ -232,7 +232,7 @@ class Entity extends Model
             $recursive_fillable = $this->fillable;
             $entity = $this;
 
-            while($entity !== null && \get_class($entity) !== self::class)
+            while($entity !== null && \get_class($entity) !== Entity::class)
             {
                 $next_parent = get_parent_class($entity);
                 $phantom = new $next_parent;
@@ -256,7 +256,7 @@ class Entity extends Model
 
         foreach($attributes as $key => $value)
         {
-            if (!\in_array($key, $fillable, true) && !\in_array($key, ['entity_id', 'id']))
+            if (!\in_array($key, $fillable) && !\in_array($key, ['entity_id', 'id']))
                 $not_immediately_fillable[$key] = $value;
             else $immediately_fillable[$key] = $value;
         }
@@ -283,7 +283,7 @@ class Entity extends Model
         $save_queue = [];
         $entity = $this;
 
-        while(($current_class = \get_class($entity)) !== self::class)
+        while(($current_class = \get_class($entity)) != Entity::class)
         {
             $save_queue[] = $entity;
             $entity = $entity->parent_model();
@@ -299,7 +299,7 @@ class Entity extends Model
         foreach($save_queue as $save_item)
         {
             $current_class = \get_class($save_item);
-            if($current_class !== self::class)
+            if($current_class != Entity::class)
                 $save_item->entity_id = $entity_id;
             $save_item->raw_save();
 //            $level++;
