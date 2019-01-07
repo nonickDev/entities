@@ -5,6 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 class Entity extends Model
@@ -51,7 +52,13 @@ class Entity extends Model
     public function tableForAttribute($attr)
     {
         $entity_class = $this->entityClassForAttribute($attr);
+//        Log::debug($entity_class . " " . $attr . " " . get_class($this));
         return $entity_class::TableName();
+    }
+
+    public function filterColumns($columns, $filter_for = null)
+    {
+        return $columns;
     }
 
     public function entityClassForAttribute($attr)
