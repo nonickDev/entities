@@ -61,6 +61,11 @@ class Entity extends Model
         return $columns;
     }
 
+    public function initialise()
+    {
+        
+    }
+
     public function entityClassForAttribute($attr)
     {
         $entity = $this;
