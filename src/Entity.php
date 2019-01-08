@@ -53,7 +53,8 @@ class Entity extends Model
     {
         $entity_class = $this->entityClassForAttribute($attr);
 //        Log::debug($entity_class . " " . $attr . " " . get_class($this));
-        return $entity_class::TableName();
+        $result = $entity_class::TableName();
+        return $result;
     }
 
     public function filterColumns($columns, $filter_for = null)
