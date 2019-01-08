@@ -67,6 +67,11 @@ class Entity extends Model
         
     }
 
+    public function showForProjectEntityTypeAssociation($project_entity_type_association)
+    {
+        return true;
+    }
+
     public function entityClassForAttribute($attr)
     {
         $entity = $this;
