@@ -57,21 +57,6 @@ class Entity extends Model
         return $result;
     }
 
-    public function filterColumns($columns, $filter_for = null)
-    {
-        return $columns;
-    }
-
-    public function initialise()
-    {
-        
-    }
-
-    public function showForProjectEntityTypeAssociation($project_entity_type_association)
-    {
-        return true;
-    }
-
     public function entityClassForAttribute($attr)
     {
         $entity = $this;
@@ -402,4 +387,45 @@ class Entity extends Model
             return $has_attribute;
         }
     }
+    
+    public function __toString()
+    {
+        $fillable = $this->getRecursiveFillable();
+        if(in_array("name", $fillable)) return $this->name;
+        else if(in_array("title", $fillable)) return $this->title;
+        else if(in_array("label", $fillable)) return $this->label;
+        else if(in_array("term", $fillable)) return $this->term;
+        else if(in_array("headline", $fillable)) return $this->headine;
+        else if(in_array("caption", $fillable)) return $this->caption;
+        else return static::$name . " ID " . $this->id_as(static::class) . "";
+    }
+
+    public static function select_by_term($term = null)
+    {
+        return with(new static)->selectByTerm($term);
+    }
+    public function selectByTerm($term = null)
+    {
+        $field = null;
+        $fillable = $this->getRecursiveFillable();
+        if(in_array("name", $fillable)) $field = "name";
+        else if(in_array("title", $fillable)) $field = "title";
+        else if(in_array("label", $fillable)) $field = "label";
+        else if(in_array("term", $fillable)) $field = "term";
+        else if(in_array("headline", $fillable)) $field = "headline";
+        else if(in_array("caption", $fillable)) $field = "caption";
+        if($field)
+        {
+            $entity_class = static::class;
+            $entity_table = $entity_class::TableName();
+            $query = $entity_class
+                ::select($entity_table . ".*")
+                ->where($field, "LIKE", "%" . $term . "%");
+            return $query;
+        }
+        throw new Exception("Method selectByTerm must be overwritten by sub class.");
+    }
+    public function showForProjectEntityTypeAssociation() { return true; }
+    public function initialise() { }
+    public function filterColumns($columns, $filter_for = null) { return $columns; }
 }
