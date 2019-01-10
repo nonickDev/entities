@@ -5,6 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 class Entity extends Model
@@ -37,10 +38,10 @@ class Entity extends Model
 
     public function __set($key, $value)
     {
-        if($key == "entity_id")
+        if($key == 'entity_id')
         {
             if(static::class == Entity::class)
-                return $this->setAttribute("id", $value);
+                return $this->setAttribute('id', $value);
             else return $this->setAttribute($key, $value);
         }
         else if($this->hasAttribute($key)) return $this->setAttribute($key, $value);
@@ -51,19 +52,21 @@ class Entity extends Model
     public function tableForAttribute($attr)
     {
         $entity_class = $this->entityClassForAttribute($attr);
-        return $entity_class::TableName();
+//        Log::debug($entity_class . " " . $attr . " " . get_class($this));
+        $result = $entity_class::TableName();
+        return $result;
     }
 
     public function entityClassForAttribute($attr)
     {
         $entity = $this;
 
-        if($attr === "id") return $this;
+        if($attr === 'id') return $this;
 
-        while(!$entity->hasAttribute($attr) && get_class($entity) !== Entity::class)
+        while(!$entity->hasAttribute($attr) && \get_class($entity) !== Entity::class)
             $entity = $entity->parent_model();
 
-        if(($entity_class = get_class($entity)) === Entity::class)
+        if(($entity_class = \get_class($entity)) === Entity::class)
             return $this->hasAttribute($attr);
         else return $entity_class;
     }
@@ -77,13 +80,13 @@ class Entity extends Model
     {
         switch($attr_)
         {
-            case "entity_id":
+            case 'entity_id':
                 if(static::class === Entity::class)
                     return $this->id;
-                else return $this->getAttribute("entity_id");
+                else return $this->getAttribute('entity_id');
                 break;
 
-            case "fillable":
+            case 'fillable':
                 return $this->getRecursiveFillable(); break;
 
             default:
@@ -99,11 +102,11 @@ class Entity extends Model
     public function id_as($entity_class_)
     {
         if($entity_class_ === null)
-            throw new Exception("Entity::id_as() called without entity_class being specified (NULL)");
+            throw new Exception('Entity::id_as() called without entity_class being specified (NULL)');
 
         $entity = $this;
 
-        while(($entity_class = get_class($entity)) !== $entity_class_ && $entity_class !== Entity::class)
+        while(($entity_class = \get_class($entity)) !== $entity_class_ && $entity_class !== Entity::class)
             $entity = $entity->parent_model();
 
         return $entity->id;
@@ -129,10 +132,10 @@ class Entity extends Model
                 }
 
                 if($parent_class != Entity::class)
-                    $entity_id_column = "entity_id";
-                else $entity_id_column = "id";
+                    $entity_id_column = 'entity_id';
+                else $entity_id_column = 'id';
 
-                if($this->hasAttribute("entity_id"))
+                if($this->hasAttribute('entity_id'))
                 {
                     $entity_id = $this->entity_id;
 
@@ -140,18 +143,18 @@ class Entity extends Model
                     {
                         $parent_table_name = $parent_class::TableName();
                         $data = (array) DB::table($parent_table_name)->where(function($query) use($entity_id, $entity_id_column) { $query->where($entity_id_column, '=', $entity_id); })->first();
-                        if(is_array($given_attributes) && count($given_attributes) > 0)
+                        if(\is_array($given_attributes) && \count($given_attributes) > 0)
                             $data = array_merge($data, $given_attributes);
                     }
                     else $data = $given_attributes;
                 }
                 else $data = $given_attributes;
 
-                if($data == null) $data = [];
+                if($data === null) $data = [];
 
                 $this->parent_ = Entity::CreateNew($parent_class, $data);
             }
-            else if(is_array($given_attributes) && count($given_attributes) > 0) $this->parent_->fill($given_attributes);
+            else if(\is_array($given_attributes) && \count($given_attributes) > 0) $this->parent_->fill($given_attributes);
 
             return $this->parent_;
         };
@@ -161,7 +164,7 @@ class Entity extends Model
 
     public static function GetWithID($entity_class, $id)
     {
-        return $entity_class::where("id", $id)->first();
+        return $entity_class::where('id', $id)->first();
     }
 
     public static function GetWithEntityID($entity_id, $entity_class = null, $elevate = true)
@@ -170,8 +173,8 @@ class Entity extends Model
             $entity_class = Entity::class;
 
         if($entity_class != Entity::class)
-            $entity = $entity_class::where("entity_id", $entity_id)->first();
-        else $entity = $entity_class::where("id", $entity_id)->first();
+            $entity = $entity_class::where('entity_id', $entity_id)->first();
+        else $entity = $entity_class::where('id', $entity_id)->first();
 
         return $entity;
     }
@@ -180,10 +183,10 @@ class Entity extends Model
     {
         return static::unguarded(function () use ($entity_class, $attributes)
         {
-            $entity = (new $entity_class);
+            $entity = new $entity_class;
             $entity->fill($attributes);
 
-            if(isset($attributes["id"]))
+            if(isset($attributes['id']))
                 $entity->exists = true;
 
             return $entity;
@@ -198,7 +201,7 @@ class Entity extends Model
 
         foreach($entities as $i => $entity)
         {
-            $current_class = get_class($entity);
+            $current_class = \get_class($entity);
             $top_class = $entity->top_class;
 
             if($current_class !== $top_class)
@@ -223,7 +226,7 @@ class Entity extends Model
 
     public function getRecursiveFillable()
     {
-        $cache_key = "Entity__getRecursiveFillable__" . static::class;
+        $cache_key = 'Entity__getRecursiveFillable__' . static::class;
 
         if(Cache::has($cache_key))
             return Cache::get($cache_key);
@@ -232,7 +235,7 @@ class Entity extends Model
             $recursive_fillable = $this->fillable;
             $entity = $this;
 
-            while($entity !== null && get_class($entity) !== Entity::class)
+            while($entity !== null && \get_class($entity) !== Entity::class)
             {
                 $next_parent = get_parent_class($entity);
                 $phantom = new $next_parent;
@@ -256,12 +259,12 @@ class Entity extends Model
 
         foreach($attributes as $key => $value)
         {
-            if (!in_array($key, $fillable) && !in_array($key, ["entity_id", "id"]))
+            if (!\in_array($key, $fillable) && !\in_array($key, ['entity_id', 'id']))
                 $not_immediately_fillable[$key] = $value;
             else $immediately_fillable[$key] = $value;
         }
 
-        if(is_array($not_immediately_fillable) && count($not_immediately_fillable) >= 1)
+        if(\is_array($not_immediately_fillable) && \count($not_immediately_fillable) >= 1)
             // attributes given in case parent entities not created yet. this can occur when an entity is
             // created using the new keyword, given attributes pertaining to parents, but has not been saved.
             $this->parent_model($not_immediately_fillable);
@@ -272,8 +275,7 @@ class Entity extends Model
     public function attributeEntity($attribute_name)
     {
         $attribute_name = preg_replace('/_id$/', '', $attribute_name);
-        $object = $this->{$attribute_name};
-        return $object;
+        return $this->{$attribute_name};
     }
 
     public function save(array $options = [])
@@ -284,26 +286,26 @@ class Entity extends Model
         $save_queue = [];
         $entity = $this;
 
-        while(($current_class = get_class($entity)) != Entity::class)
+        while(($current_class = \get_class($entity)) != Entity::class)
         {
             $save_queue[] = $entity;
             $entity = $entity->parent_model();
         }
 
-        $entity->__set("top_class", $static_class);
+        $entity->__set('top_class', $static_class);
         $entity->raw_save();
         $entity_id = $entity->entity_id;
 
         $save_queue = array_reverse($save_queue);
-        $level = 1;
+//        $level = 1;
 
         foreach($save_queue as $save_item)
         {
-            $current_class = get_class($save_item);
+            $current_class = \get_class($save_item);
             if($current_class != Entity::class)
                 $save_item->entity_id = $entity_id;
             $save_item->raw_save();
-            $level++;
+//            $level++;
         }
     }
 
@@ -350,7 +352,7 @@ class Entity extends Model
 
     public function table_name($field_name = null)
     {
-        $cache_key = "Entity__table_name__" . static::class . "__" . $field_name;
+        $cache_key = 'Entity__table_name__' . static::class . '__' . $field_name;
 
         if(Cache::has($cache_key))
             return Cache::get($cache_key);
@@ -360,7 +362,7 @@ class Entity extends Model
             {
                 $parent = $this->parent_model();
                 if($parent === false || $field_name === null)
-                    throw new Exception("Could not find field " . $field_name . ", reached the top of the parent tree for " . static::class . ".");
+                    throw new Exception('Could not find field ' . $field_name . ', reached the top of the parent tree for ' . static::class . '.');
                 $table_name = $parent->table_name($field_name);
             }
             else $table_name = with(new static)->getTable();
@@ -373,7 +375,7 @@ class Entity extends Model
 
     public function hasAttribute($key)
     {
-        $cache_key = "Entity__hasAttribute__" . static::class . "__" . $key;
+        $cache_key = 'Entity__hasAttribute__' . static::class . '__' . $key;
 
         if(Cache::has($cache_key))
             return Cache::get($cache_key);
@@ -385,4 +387,45 @@ class Entity extends Model
             return $has_attribute;
         }
     }
+    
+    public function __toString()
+    {
+        $fillable = $this->getRecursiveFillable();
+        if(in_array("name", $fillable)) return $this->name;
+        else if(in_array("title", $fillable)) return $this->title;
+        else if(in_array("label", $fillable)) return $this->label;
+        else if(in_array("term", $fillable)) return $this->term;
+        else if(in_array("headline", $fillable)) return $this->headine;
+        else if(in_array("caption", $fillable)) return $this->caption;
+        else return static::$name . " ID " . $this->id_as(static::class) . "";
+    }
+
+    public static function select_by_term($term = null)
+    {
+        return with(new static)->selectByTerm($term);
+    }
+    public function selectByTerm($term = null)
+    {
+        $field = null;
+        $fillable = $this->getRecursiveFillable();
+        if(in_array("name", $fillable)) $field = "name";
+        else if(in_array("title", $fillable)) $field = "title";
+        else if(in_array("label", $fillable)) $field = "label";
+        else if(in_array("term", $fillable)) $field = "term";
+        else if(in_array("headline", $fillable)) $field = "headline";
+        else if(in_array("caption", $fillable)) $field = "caption";
+        if($field)
+        {
+            $entity_class = static::class;
+            $entity_table = $entity_class::TableName();
+            $query = $entity_class
+                ::select($entity_table . ".*")
+                ->where($field, "LIKE", "%" . $term . "%");
+            return $query;
+        }
+        throw new Exception("Method selectByTerm must be overwritten by sub class.");
+    }
+    public function showForProjectEntityTypeAssociation() { return true; }
+    public function initialise() { }
+    public function filterColumns($columns, $filter_for = null) { return $columns; }
 }
