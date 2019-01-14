@@ -135,18 +135,13 @@ class Entity extends Model
                     $entity_id_column = 'entity_id';
                 else $entity_id_column = 'id';
 
-                if($this->hasAttribute('entity_id'))
+                if($this->hasAttribute('entity_id') && ($entity_id = $this->entity_id))
                 {
-                    $entity_id = $this->entity_id;
+                    $parent_table_name = $parent_class::TableName();
+                    $data = (array) DB::table($parent_table_name)->where(function($query) use($entity_id, $entity_id_column) { $query->where($entity_id_column, '=', $entity_id); })->first();
 
-                    if($entity_id)
-                    {
-                        $parent_table_name = $parent_class::TableName();
-                        $data = (array) DB::table($parent_table_name)->where(function($query) use($entity_id, $entity_id_column) { $query->where($entity_id_column, '=', $entity_id); })->first();
-                        if(\is_array($given_attributes) && \count($given_attributes) > 0)
-                            $data = array_merge($data, $given_attributes);
-                    }
-                    else $data = $given_attributes;
+                    if(\is_array($given_attributes) && \count($given_attributes) > 0)
+                        $data = array_merge($data, $given_attributes);
                 }
                 else $data = $given_attributes;
 
@@ -286,7 +281,7 @@ class Entity extends Model
         $save_queue = [];
         $entity = $this;
 
-        while(($current_class = \get_class($entity)) != Entity::class)
+        while(($current_class = \get_class($entity)) !== Entity::class)
         {
             $save_queue[] = $entity;
             $entity = $entity->parent_model();
@@ -302,7 +297,7 @@ class Entity extends Model
         foreach($save_queue as $save_item)
         {
             $current_class = \get_class($save_item);
-            if($current_class != Entity::class)
+            if($current_class !== Entity::class)
                 $save_item->entity_id = $entity_id;
             $save_item->raw_save();
 //            $level++;

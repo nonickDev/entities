@@ -15,6 +15,15 @@ class EntityType extends Entity
         'entity_class',
     ];
 
+    public function __toString()
+    {
+        $entity_class = $this->entity_class;
+
+        $name = $entity_class::$name;
+
+        return $name;
+    }
+
     public static function From($entity_class_)
     {
         $entity_type = EntityType::where("entity_class", "=", $entity_class_)->first();
