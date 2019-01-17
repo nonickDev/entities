@@ -42,7 +42,7 @@ class EntityType extends Entity
             foreach($entity_types as $entity_type)
             {
                 $entity_class = $entity_type->entity_class;
-                $table_name = $entity_class::TableName();
+                $table_name = $entity_class::tableName();
 
                 if($table_name === $table_name_)
                     return $entity_type;

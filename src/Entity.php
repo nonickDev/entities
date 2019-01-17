@@ -1,12 +1,15 @@
 <?php namespace Cvsouth\Entities;
 
-use Exception;
+use Cvsouth\Entities\Facades\Entities;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+
+use Exception;
 
 class Entity extends Model
 {
@@ -18,6 +21,8 @@ class Entity extends Model
     protected $fillable = ['id', 'top_class', 'entity_id'];
     protected $parent_ = null;
     public $timestamps = false;
+
+    protected $loaded = [];
 
     public function __construct(array $attributes = [])
     {
@@ -53,7 +58,7 @@ class Entity extends Model
     {
         $entity_class = $this->entityClassForAttribute($attr);
 //        Log::debug($entity_class . " " . $attr . " " . get_class($this));
-        $result = $entity_class::TableName();
+        $result = $entity_class::tableName();
         return $result;
     }
 
@@ -69,6 +74,20 @@ class Entity extends Model
         if(($entity_class = \get_class($entity)) === Entity::class)
             return $this->hasAttribute($attr);
         else return $entity_class;
+    }
+
+    public static function createNew($entity_class, array $attributes)
+    {
+        return static::unguarded(function () use ($entity_class, $attributes)
+        {
+            $entity = new $entity_class;
+            $entity->fill($attributes);
+
+            if(isset($attributes['id']))
+                $entity->exists = true;
+
+            return $entity;
+        });
     }
 
     public function getEntityId()
@@ -137,7 +156,7 @@ class Entity extends Model
 
                 if($this->hasAttribute('entity_id') && ($entity_id = $this->entity_id))
                 {
-                    $parent_table_name = $parent_class::TableName();
+                    $parent_table_name = $parent_class::tableName();
                     $data = (array) DB::table($parent_table_name)->where(function($query) use($entity_id, $entity_id_column) { $query->where($entity_id_column, '=', $entity_id); })->first();
 
                     if(\is_array($given_attributes) && \count($given_attributes) > 0)
@@ -147,7 +166,7 @@ class Entity extends Model
 
                 if($data === null) $data = [];
 
-                $this->parent_ = Entity::CreateNew($parent_class, $data);
+                $this->parent_ = Entity::createNew($parent_class, $data);
             }
             else if(\is_array($given_attributes) && \count($given_attributes) > 0) $this->parent_->fill($given_attributes);
 
@@ -157,65 +176,25 @@ class Entity extends Model
         return $func();
     }
 
-    public static function GetWithID($entity_class, $id)
-    {
-        return $entity_class::where('id', $id)->first();
-    }
-
-    public static function GetWithEntityID($entity_id, $entity_class = null, $elevate = true)
-    {
-        if($entity_class === null)
-            $entity_class = Entity::class;
-
-        if($entity_class != Entity::class)
-            $entity = $entity_class::where('entity_id', $entity_id)->first();
-        else $entity = $entity_class::where('id', $entity_id)->first();
-
-        return $entity;
-    }
-
-    public static function CreateNew($entity_class, array $attributes)
-    {
-        return static::unguarded(function () use ($entity_class, $attributes)
-        {
-            $entity = new $entity_class;
-            $entity->fill($attributes);
-
-            if(isset($attributes['id']))
-                $entity->exists = true;
-
-            return $entity;
-        });
-    }
-
-    public static function ElevateMultiple($entities)
-    {
-        $is_collection = $entities instanceof Collection;
-
-        $elevated_entities = [];
-
-        foreach($entities as $i => $entity)
-        {
-            $current_class = \get_class($entity);
-            $top_class = $entity->top_class;
-
-            if($current_class !== $top_class)
-                $elevated_entities[] = Entity::GetWithEntityID($entity->entity_id, $top_class);
-            else $elevated_entities[] = $entity;
-        }
-
-        if($is_collection) $elevated_entities = collect($elevated_entities);
-
-        return $elevated_entities;
-    }
-
     protected function elevate()
     {
-        $top_class = $this->top_class;
+        $entity_id = $this->entity_id;
+//        $top_class = $this->top_class;
+        $top_class = Entities::topClassWithEntityID($entity_id); // TODO: Try using inline code instead of Service call at high volume and whether it is better to do that for performance reasons
         $current_class = static::class;
 
         if($current_class !== $top_class)
+        {
             return static::GetWithEntityID($this->entity_id, $top_class);
+
+            // instead of this, get top class values and add them to existing entity
+            // dont get intermediary values - but put entities in place at those levels without
+
+//            $table = $this->getTable();
+//            $data = (array) DB::table($table)->where(function($query) use($entity_id) { $query->where('entity_id', '=', $entity_id); })->first();
+
+
+        }
         else return $this;
     }
 
@@ -312,7 +291,13 @@ class Entity extends Model
 
         if ($this->exists)
             $saved = $this->isDirty()?$this->performUpdate($query, $options) : true;
-        else $saved = $this->performInsert($query);
+        else
+        {
+            $saved = $this->performInsert($query);
+            
+            // TODO: Debug this. Does the new entity even have top_class / parent classes registered?
+            Cache::forever('#' . $this->entity_id, $this->top_class);
+        }
 
         if ($saved) $this->finishSave($options);
 
@@ -335,12 +320,17 @@ class Entity extends Model
             $this->performDeleteOnModel();
             $this->exists = false;
             $this->fireModelEvent('deleted', false);
-
-            return ($parent_model == null) || $parent_model->delete();
+            
+            if($parent_model == null)
+            {
+                Cache::forget('#' . $this->entity_id);
+                return true;
+            }
+            else return $parent_model->delete();
         }
     }
 
-    public static function TableName($field_name = null)
+    public static function tableName($field_name = null)
     {
         return with(new static)->table_name($field_name);
     }
@@ -399,6 +389,7 @@ class Entity extends Model
     {
         return with(new static)->selectByTerm($term);
     }
+
     public function selectByTerm($term = null)
     {
         $field = null;
@@ -412,7 +403,7 @@ class Entity extends Model
         if($field)
         {
             $entity_class = static::class;
-            $entity_table = $entity_class::TableName();
+            $entity_table = $entity_class::tableName();
             $query = $entity_class
                 ::select($entity_table . ".*")
                 ->where($field, "LIKE", "%" . $term . "%");

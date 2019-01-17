@@ -1,5 +1,7 @@
 <?php namespace Cvsouth\Entities;
 
+use Cvsouth\Entities\Facades\Entities;
+
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
@@ -16,7 +18,7 @@ class EntityBuilder extends Builder
     {
         $collection = parent::get($columns);
 
-        if($elevate) $collection = Entity::ElevateMultiple($collection);
+        if($elevate) $collection = Entities::elevateMultiple($collection);
         return $collection;
     }
 
