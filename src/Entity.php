@@ -157,7 +157,7 @@ class Entity extends Model
                 if($this->hasAttribute('entity_id') && ($entity_id = $this->entity_id))
                 {
                     $parent_table_name = $parent_class::tableName();
-                    $data = (array) DB::table($parent_table_name)->where(function($query) use($entity_id, $entity_id_column) { $query->where($entity_id_column, '=', $entity_id); })->first();
+                    $data = (array) DB::table($parent_table_name)->where($entity_id_column, '=', $entity_id)->first();
 
                     if(\is_array($given_attributes) && \count($given_attributes) > 0)
                         $data = array_merge($data, $given_attributes);
@@ -191,7 +191,7 @@ class Entity extends Model
             // dont get intermediary values - but put entities in place at those levels without
 
 //            $table = $this->getTable();
-//            $data = (array) DB::table($table)->where(function($query) use($entity_id) { $query->where('entity_id', '=', $entity_id); })->first();
+//            $data = (array) DB::table($table)->where('entity_id', '=', $entity_id)->first();
 
 
         }

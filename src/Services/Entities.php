@@ -1,5 +1,10 @@
 <?php namespace Cvsouth\Entities\Services;
 
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Cvsouth\Entities\Entity;
+
 class Entities
 {
     public function topClassWithEntityID($entity_id)
