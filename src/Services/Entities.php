@@ -44,7 +44,7 @@ class Entities
         return $entity;
     }
 
-    public static function elevateMultiple($entities)
+    public function elevateMultiple($entities)
     {
         // TODO: always fetch top class values, in grouped queries
 
@@ -53,14 +53,7 @@ class Entities
         $elevated_entities = [];
 
         foreach($entities as $i => $entity)
-        {
-            $current_class = \get_class($entity);
-            $top_class = $entity->top_class;
-
-            if($current_class !== $top_class)
-                $elevated_entities[] = Entity::GetWithEntityID($entity->entity_id, $top_class);
-            else $elevated_entities[] = $entity;
-        }
+            $elevated_entities[$i] = $entity->elevate();
 
         if($is_collection) $elevated_entities = collect($elevated_entities);
 

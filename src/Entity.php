@@ -133,7 +133,7 @@ class Entity extends Model
 
     public function model_as($entity_class_)
     {
-        return static::GetWithEntityID($this->entity_id, $entity_class_);
+        return Entities::getWithEntityID($this->entity_id, $entity_class_);
     }
 
     // given attributes are optional and just for when the object is created but not yet saved to database
@@ -156,8 +156,10 @@ class Entity extends Model
 
                 if($this->hasAttribute('entity_id') && ($entity_id = $this->entity_id))
                 {
-                    $parent_table_name = $parent_class::tableName();
-                    $data = (array) DB::table($parent_table_name)->where($entity_id_column, '=', $entity_id)->first();
+//                    $parent_table_name = $parent_class::tableName();
+//                    $data = (array) DB::table($parent_table_name)->where($entity_id_column, '=', $entity_id)->first();
+
+                    $data = ['entity_id' => $entity_id];
 
                     if(\is_array($given_attributes) && \count($given_attributes) > 0)
                         $data = array_merge($data, $given_attributes);
@@ -176,24 +178,37 @@ class Entity extends Model
         return $func();
     }
 
-    protected function elevate()
+    public function parent()
+    {
+        return $this->parent_;
+    }
+
+    public function set_parent($entity)
+    {
+        $this->parent_ = $entity;
+    }
+
+    public function elevate($attributes = [])
     {
         $entity_id = $this->entity_id;
-//        $top_class = $this->top_class;
         $top_class = Entities::topClassWithEntityID($entity_id); // TODO: Try using inline code instead of Service call at high volume and whether it is better to do that for performance reasons
         $current_class = static::class;
 
+        $attributes['entity_id'] = $entity_id;
+
         if($current_class !== $top_class)
         {
-            return static::GetWithEntityID($this->entity_id, $top_class);
+            $top_entity = new $top_class($attributes);
 
-            // instead of this, get top class values and add them to existing entity
-            // dont get intermediary values - but put entities in place at those levels without
+            $entity = $top_entity;
+            while($entity->parent() === null)
+            {
+                if(get_parent_class($entity) === $current_class)
+                    $entity->set_parent($this);
+                else $entity = $entity->parent_model();
+            }
 
-//            $table = $this->getTable();
-//            $data = (array) DB::table($table)->where('entity_id', '=', $entity_id)->first();
-
-
+            return $top_entity;
         }
         else return $this;
     }
@@ -243,7 +258,12 @@ class Entity extends Model
             // created using the new keyword, given attributes pertaining to parents, but has not been saved.
             $this->parent_model($not_immediately_fillable);
 
-        return parent::fill($immediately_fillable);
+        $result = parent::fill($immediately_fillable);
+
+        if(isset($immediately_fillable['entity_id']))
+            $this->setAttribute('entity_id', $immediately_fillable['entity_id']);
+
+        return $result;
     }
 
     public function attributeEntity($attribute_name)
