@@ -20,10 +20,13 @@ class Entities
             // and also a massive burst when the cache is first being rebuilt
             // it wont take too long, let's just rebuild the whole thing
         {
-            $entities = DB::table('entities')->simplePaginate(300);
-
-            foreach($entities as $entity)
-                Cache::forever('#' . $entity->id, $entity->top_class);
+            DB::table('entities')->orderBy('id', 'asc')->chunk(300, function($entities)
+            {
+                foreach($entities as $entity)
+                    Cache::forever('#' . $entity->id, $entity->top_class);
+            });
+            
+            return $this->topClassWithEntityID($entity_id);
         }
     }
     

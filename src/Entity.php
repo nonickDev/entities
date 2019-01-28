@@ -95,6 +95,22 @@ class Entity extends Model
         return $this->entity_id;
     }
 
+    public function fetchLocalAttributes()
+    {
+        $table = static::tableName();
+        $entity_id = $this->getEntityId();
+        $attributes_array = $this->fillable;
+        $attributes_array[] = 'id';
+
+        $data = (array) DB::table($table)->where('entity_id', '=', $entity_id)->first();
+
+        foreach($data as $key => $value)
+            if(in_array($key, $attributes_array))
+                $this->setAttribute($key, $value);
+
+        return true;
+    }
+
     public function __get($attr_)
     {
         switch($attr_)
@@ -114,6 +130,11 @@ class Entity extends Model
                     return $attr;
                 else if($attr === null && !$this->hasAttribute($attr_))
                     return $this->parent_model()->$attr_;
+                else if(!array_key_exists($attr_, $this->attributesToArray()))
+                {
+                    $this->fetchLocalAttributes();
+                    return $this->getAttribute($attr_);
+                }
                 else return $attr;
         }
     }
@@ -194,10 +215,10 @@ class Entity extends Model
         $top_class = Entities::topClassWithEntityID($entity_id); // TODO: Try using inline code instead of Service call at high volume and whether it is better to do that for performance reasons
         $current_class = static::class;
 
-        $attributes['entity_id'] = $entity_id;
-
         if($current_class !== $top_class)
         {
+            $attributes['entity_id'] = $entity_id;
+
             $top_entity = new $top_class($attributes);
 
             $entity = $top_entity;
@@ -205,7 +226,7 @@ class Entity extends Model
             {
                 if(get_parent_class($entity) === $current_class)
                     $entity->set_parent($this);
-                else $entity = $entity->parent_model();
+                else $entity = $entity->parent_model($attributes);
             }
 
             return $top_entity;
