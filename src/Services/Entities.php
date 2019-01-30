@@ -20,11 +20,34 @@ class Entities
             // and also a massive burst when the cache is first being rebuilt
             // it wont take too long, let's just rebuild the whole thing
         {
-            DB::table('entities')->orderBy('id', 'asc')->chunk(300, function($entities)
+            // We do our best to ensure this won't run multiple times simultaneously
+            // It could happen from time to time in theory but not much.
+            // Block until the primary thread is done instead.
+            
+            $blocked = false;
+            do
             {
-                foreach($entities as $entity)
-                    Cache::forever('#' . $entity->id, $entity->top_class);
-            });
+                $locked = Cache::has('#...');
+                if($locked)
+                {
+                    $blocked = true;
+                    sleep(0.1);
+                }
+            }
+            while($locked);
+            
+            if(!$blocked)
+            {
+                Cache::put('#...', true);
+                
+                DB::table('entities')->orderBy('id', 'asc')->chunk(300, function($entities)
+                {
+                    foreach($entities as $entity)
+                        Cache::forever('#' . $entity->id, $entity->top_class);
+                });
+                
+                Cache::forget('#...');
+            }
             
             return $this->topClassWithEntityID($entity_id);
         }
