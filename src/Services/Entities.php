@@ -29,20 +29,14 @@ class Entities
             return $this->topClassWithEntityID($entity_id);
         }
     }
-    
-    public function getWithID($entity_class, $id)
-    {
-        return $entity_class::where('id', $id)->first();
-    }
 
-    public function getWithEntityID($entity_id, $entity_class = null)
+    public function getWithEntityID($entity_id)
     {
-        if($entity_class === null)
-            $entity_class = Entity::class;
-
-        if($entity_class != Entity::class)
-            $entity = $entity_class::where('entity_id', $entity_id)->first();
-        else $entity = $entity_class::where('id', $entity_id)->first();
+        $top_class = $this->topClassWithEntityID($entity_id);
+        
+        if($top_class != Entity::class)
+            $entity = $top_class::where('entity_id', $entity_id)->first();
+        else $entity = $top_class::where('id', $entity_id)->first();
 
         return $entity;
     }
