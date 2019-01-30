@@ -24,6 +24,10 @@ class Entities
             // It could happen from time to time in theory but not much.
             // Block until the primary thread is done instead.
             
+            // Instead of using a cache value, convert to using sem_get
+            // http://php.net/manual/en/function.sem-get.php
+            // This should be even more accurate. Polyfil for Windows in foundation
+            
             $blocked = false;
             do
             {
